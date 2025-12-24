@@ -1,12 +1,14 @@
-import React, { useState, useCallback } from 'react';
-import { GameConcept, GeneratedImage, LoadingState, ScreenType } from './types';
-import { generateGameConcept, generateGameScreenshot } from './services/geminiService';
-import ConceptCard from './components/ConceptCard';
-import ScreenshotGallery from './components/ScreenshotGallery';
-import Button from './components/Button';
+'use client';
+
+import { useState, useCallback } from 'react';
+import { GameConcept, GeneratedImage, LoadingState, ScreenType } from '../types';
+import { generateGameConcept, generateGameScreenshot } from '../services/modelscopeService';
+import ConceptCard from '../components/ConceptCard';
+import ScreenshotGallery from '../components/ScreenshotGallery';
+import Button from '../components/Button';
 import { Wand2, Plus, Smartphone, Sparkles, Layout } from 'lucide-react';
 
-const App: React.FC = () => {
+export default function Home() {
   const [userIdea, setUserIdea] = useState('');
   const [concept, setConcept] = useState<GameConcept | null>(null);
   const [images, setImages] = useState<GeneratedImage[]>([]);
@@ -42,7 +44,10 @@ const App: React.FC = () => {
     setError(null);
 
     try {
+      console.log('Generating screenshot for screen type:', screenType);
       const base64Image = await generateGameScreenshot(concept, screenType);
+      console.log('Received base64 image, length:', base64Image.length);
+
       const newImage: GeneratedImage = {
         id: crypto.randomUUID(),
         screenType,
@@ -50,7 +55,9 @@ const App: React.FC = () => {
         timestamp: Date.now(),
       };
       setImages(prev => [newImage, ...prev]);
+      console.log('Added new image to gallery');
     } catch (err: any) {
+      console.error('Error generating screenshot:', err);
       setError(err.message || 'Failed to generate image. Please try again.');
     } finally {
       setLoading(prev => ({ ...prev, isGeneratingImage: false, currentAction: undefined }));
@@ -64,7 +71,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* Header */}
         <header className="flex items-center gap-3 border-b border-white/10 pb-6">
           <div className="p-3 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
@@ -78,10 +85,10 @@ const App: React.FC = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* Left Column: Input & Concept */}
           <div className="lg:col-span-4 space-y-6">
-            
+
             {/* Input Section */}
             <section className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-xl">
               <form onSubmit={handleGenerateConcept} className="space-y-4">
@@ -98,9 +105,9 @@ const App: React.FC = () => {
                     onChange={(e) => setUserIdea(e.target.value)}
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  isLoading={loading.isGeneratingConcept} 
+                <Button
+                  type="submit"
+                  isLoading={loading.isGeneratingConcept}
                   disabled={!userIdea.trim()}
                   className="w-full py-3"
                 >
@@ -119,7 +126,7 @@ const App: React.FC = () => {
             {concept && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <ConceptCard concept={concept} />
-                
+
                 <section className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-xl">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Layout className="w-5 h-5 text-indigo-400" />
@@ -169,6 +176,4 @@ const App: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default App;
+}

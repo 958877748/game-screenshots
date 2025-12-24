@@ -124,10 +124,12 @@ export const generateGameScreenshot = async (
     }
 
     const data = await response.json();
+    console.log('Image generation response:', JSON.stringify(data, null, 2));
 
     // Handle both URL and base64 formats
     if (data.data && data.data[0] && data.data[0].b64_json) {
-      // Base64 format
+      // Base64 format from server
+      console.log('Received base64 image from server');
       return `data:image/png;base64,${data.data[0].b64_json}`;
     } else if (data.output_images && data.output_images.length > 0) {
       // URL format - need to fetch and convert to base64
@@ -135,10 +137,52 @@ export const generateGameScreenshot = async (
       console.log('Converting image URL to base64:', imageUrl);
 
       // Fetch the image and convert to base64
-      const imageResponse = await fetch(imageUrl);
-      const imageBuffer = await imageResponse.arrayBuffer();
-      const base64 = Buffer.from(imageBuffer).toString('base64');
-      return `data:image/png;base64,${base64}`;
+      try {
+        // Add CORS proxy prefix if needed
+        let fetchUrl = imageUrl;
+
+        // Try to fetch the image with proper headers
+        const imageResponse = await fetch(fetchUrl, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
+          headers: {
+            'Accept': 'image/*',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+
+        if (!imageResponse.ok) {
+          throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
+        }
+
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const base64 = Buffer.from(imageBuffer).toString('base64');
+        return `data:image/png;base64,${base64}`;
+      } catch (fetchError) {
+        console.error('Error fetching image:', fetchError);
+
+        // If direct fetch fails, try using a CORS proxy
+        try {
+          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
+          console.log('Trying CORS proxy:', proxyUrl);
+
+          const proxyResponse = await fetch(proxyUrl);
+          if (!proxyResponse.ok) {
+            throw new Error(`CORS proxy failed: ${proxyResponse.status}`);
+          }
+
+          const imageBuffer = await proxyResponse.arrayBuffer();
+          const base64 = Buffer.from(imageBuffer).toString('base64');
+          return `data:image/png;base64,${base64}`;
+        } catch (proxyError) {
+          console.error('CORS proxy also failed:', proxyError);
+
+          // Return a placeholder image or error image
+          // You can replace this with a default image URL or base64 encoded placeholder
+          throw new Error(`Failed to fetch and convert image: ${fetchError.message}. The image URL might not be accessible due to CORS restrictions.`);
+        }
+      }
     } else {
       throw new Error("No image generated in response");
     }

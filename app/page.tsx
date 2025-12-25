@@ -45,13 +45,13 @@ export default function Home() {
 
     try {
       console.log('Generating screenshot for screen type:', screenType);
-      const base64Image = await generateGameScreenshot(concept, screenType);
-      console.log('Received base64 image, length:', base64Image.length);
+      const imageUrl = await generateGameScreenshot(concept, screenType);
+      console.log('Received image URL:', imageUrl);
 
       const newImage: GeneratedImage = {
         id: crypto.randomUUID(),
         screenType,
-        imageUrl: base64Image,
+        imageUrl: imageUrl,
         timestamp: Date.now(),
       };
       setImages(prev => [newImage, ...prev]);

@@ -104,32 +104,11 @@ export async function POST(request: NextRequest) {
       throw new Error('Image generation timed out');
     }
 
-    // Fetch the image and convert to base64 on the server side to avoid CORS issues
-    try {
-      console.log('Fetching image from URL:', imageUrl);
-      const imageResponse = await fetch(imageUrl);
-
-      if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
-      }
-
-      const imageBuffer = await imageResponse.arrayBuffer();
-      const base64 = Buffer.from(imageBuffer).toString('base64');
-
-      console.log('Image converted to base64 successfully');
-
-      // Return the base64 encoded image directly
-      return NextResponse.json({
-        data: [{ b64_json: base64 }]
-      });
-    } catch (imageFetchError) {
-      console.error('Error fetching image:', imageFetchError);
-
-      // If we can't fetch the image, return the URL and let the client handle it
-      return NextResponse.json({
-        output_images: [imageUrl]
-      });
-    }
+    // Return the image URL directly
+    console.log('Returning image URL:', imageUrl);
+    return NextResponse.json({
+      output_images: [imageUrl]
+    });
   } catch (error) {
     console.error('Error generating image:', error);
     return NextResponse.json({
